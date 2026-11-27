@@ -30,8 +30,9 @@ Click the character in the panel header to choose:
 | --- | --- |
 | Calm (default) | 2.5 s between attacks; the sleeping and narrow-sidebar sprites hold still. |
 | Full | 0.6 s between attacks; the Zzz rises and the narrow-sidebar sprite bobs. |
+| Still | As Calm, and working scenes are frozen with nothing flying. |
 
-The Needs you burst plays in both, so it stands out.
+The Needs you burst plays in all three, so it stands out.
 
 The art is CipSoft's, taken from Tibia client files. Keep this repository
 private, or remove `mods/agents-tibia/sprites/` **and its Git history** before
@@ -60,8 +61,8 @@ To go back: `herdr-app do layout.switch '{"name":"main"}'`.
 
 ## Customize
 
-The male mage, Sorcerer, and Calm are the defaults. One choice applies to every
-agent, and the vocation is independent of the outfit.
+The male mage, Sorcerer, and Calm motion are the defaults. One choice applies to
+every agent, and the vocation is independent of the outfit.
 
 To offer other outfits, monsters, attacks, or loot, edit `outfits.js`,
 `fights.js`, or `loot.js` in `mods/agents-tibia/`, regenerate the sprites, and

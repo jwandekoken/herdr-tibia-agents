@@ -89,9 +89,10 @@ const VOCATIONS = [
 const vocation = () => VOCATIONS.find((v) => v.id === shared("tibia.vocation")) ?? VOCATIONS[0];
 
 // Calm, the default, keeps the eye for agents that need you: attacks pause
-// longer, and the sleeping and rail sprites hold still.
-const MOTIONS = [{ id: "full", label: "Full" }, { id: "calm", label: "Calm" }];
-const calm = () => shared("tibia.motion") !== "full";
+// longer, and the sleeping and rail sprites hold still. Still goes further:
+// only blocked agents move.
+const MOTIONS = [{ id: "full", label: "Full" }, { id: "calm", label: "Calm" }, { id: "still", label: "Still" }];
+const motion = () => (MOTIONS.some((m) => m.id === shared("tibia.motion")) ? shared("tibia.motion") : "calm");
 
 // The outfit picker: a grid of every outfit for one sex, the retro ones last.
 const PICKER_COLUMNS = 8;
@@ -249,7 +250,7 @@ export default class Agents extends View {
       .child(label);
     const sex = (label, female) => toggle(`sex-${label}`, label, this.female === female, () => { this.female = female; });
     const chosen = vocation().id;
-    const motion = calm() ? "calm" : "full";
+    const chosenMotion = motion();
     const cell = ([name, male, female]) => {
       const id = String(this.female ? female : male);
       return v_flex()
@@ -309,7 +310,7 @@ export default class Agents extends View {
         .gap(4)
         .items_center()
         .child(div().flex_1().text_size(11).text_color(t.dim).child("Motion"))
-        .children(MOTIONS.map((m) => toggle(`motion-${m.id}`, m.label, m.id === motion,
+        .children(MOTIONS.map((m) => toggle(`motion-${m.id}`, m.label, m.id === chosenMotion,
           () => setShared("tibia.motion", m.id)))));
   }
 
@@ -406,7 +407,7 @@ export default class Agents extends View {
   fight(a, size) {
     const { id, attacks } = vocation();
     if (id === "knight") return this.melee(a, size);
-    const step = this.frame("spell");
+    const step = motion() === "still" ? null : this.frame("spell"); // null: nothing flies.
     // A paladin picks anew for every shot. Each hit draws blood, and the first
     // leaves a pool for the rest of the working stretch.
     const paladin = id === "paladin";
@@ -427,7 +428,7 @@ export default class Agents extends View {
   // A knight walks up to the monster, bleeding on the floor, and strikes it,
   // drawn in front of it.
   melee(a, size) {
-    const frame = this.frame("strike");
+    const frame = motion() === "still" ? null : this.frame("strike"); // null: standing.
     return this.scene(size, [
       ["pool", "blood"],
       [this.monster(a), "monsters"],
@@ -459,7 +460,7 @@ export default class Agents extends View {
 
   // Idle: the character dozes.
   sleeping(size) {
-    const step = calm() ? "still" : this.frame("sleep");
+    const step = motion() === "full" ? this.frame("sleep") : "still";
     return this.scene(size, [
       ["fight", outfitId()],
       step !== null && [step, "sleep"],
@@ -476,7 +477,7 @@ export default class Agents extends View {
       }
       if (animation.timer) continue;
       const attack = animation === this.animations.spell || animation === this.animations.strike;
-      const pause = attack && calm() ? CALM_PAUSE : animation.pause;
+      const pause = attack && motion() === "calm" ? CALM_PAUSE : animation.pause;
       const delay = animation.frames[animation.index] === null ? pause : animation.step;
       animation.timer = cx.timer.after(delay, cx => {
         animation.timer = null;
@@ -506,11 +507,11 @@ export default class Agents extends View {
   status(a, size = SPRITE_SIZE) {
     if (a.status === "working") {
       if (size !== RAIL_SPRITE_SIZE) return this.fight(a, size);
-      // The rail has no room for a fight: the character alone, bobbing unless calm.
+      // The rail has no room for a fight: the character alone, bobbing in full motion.
       // Animating the image directly can draw a line beneath it on macOS.
       return div().relative().w(size).h(size).flex_none()
         .child(div().absolute().top(0).left(0).w(size).h(size)
-          .when(!calm(), (el) => el.loop("top", { from: 0, to: -1, period: 240 }))
+          .when(motion() === "full", (el) => el.loop("top", { from: 0, to: -1, period: 240 }))
           .child(this.sprite("working", size)));
     }
     if (a.status === "blocked") return size === RAIL_SPRITE_SIZE ? this.hurt(size) : this.cornered(a, size);

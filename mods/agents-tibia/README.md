@@ -12,8 +12,9 @@ which decides how the character attacks while an agent works. It is kept in
 unknown values use `sorcerer`.
 
 The popup also sets the motion, kept in `tibia.motion`: `calm`, the default for
-missing or unknown values, or `full`. Calm pauses longer between attacks and
-holds the sleeping and rail sprites still.
+missing or unknown values, `full`, or `still`. Calm pauses longer between
+attacks and holds the sleeping and rail sprites still. Still also freezes the
+working scenes; only blocked agents move.
 
 `outfits.js`, `loot.js`, and `fights.js` list the outfits, loot, monsters, and
 attacks. After editing them, regenerate the sprites with `tools/tibia860.py` from

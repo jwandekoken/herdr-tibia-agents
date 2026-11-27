@@ -48,10 +48,11 @@ replaced by this mod. Colors and type come from the active theme.
   viper stars; throwing knife; holy burst; small holy). A Knight always strikes
   up close, drawing blood. One vocation applies to every agent. It is chosen
   independently of the outfit; Sorcerer is the default.
-- Motion is Calm (default) or Full. The table above is Full. In Calm, attacks
-  pause 2500 ms instead of 600, the Idle scene shows one still frame of the Zzz
-  (phase 1 at 55% opacity), and the rail's working sprite does not bob. Needs
-  you is the same in both.
+- Motion is Calm (default), Full, or Still. The table above is Full. In Calm,
+  attacks pause 2500 ms instead of 600, the Idle scene shows one still frame of the Zzz
+  (phase 1 at 55% opacity), and the rail's working sprite does not bob. Still is
+  Calm without the attacks: the Working scene holds with nothing flying (a
+  Knight stands at the start). Needs you is the same in all three.
 - Agents showing the same status animate in step. Burst, attack, and sleep
   animations stop when not drawn or when the window is hidden.
 - A priority header shows the scene of the first agent listed in its section
@@ -70,8 +71,8 @@ replaced by this mod. Colors and type come from the active theme.
   Oriental, Pirate, Assassin, Beggar, Shaman, Norse, Nightmare, Jester,
   Brotherhood, Demon Hunter, Yalaharian, Newly Wed, Warmaster, Wayfarer. Retro:
   the first seven in their oldschool looks, which have no addons. The male mage
-  is the default. A last row sets the motion, Full or Calm, and keeps the popup
-  open.
+  is the default. A last row sets the motion, Full, Calm, or Still, and keeps the
+  popup open.
 - A sub-agent without a pane counts `error` as blocked and `done` as idle.
 
 ## Built from
@@ -130,7 +131,8 @@ replaced by this mod. Colors and type come from the active theme.
 - An agent going from working to blocked or done keeps its monster.
 - Each vocation shows its own attack in the Working scene, and the choice
   survives a restart.
-- Calm and Full behave as described above, and the choice survives a restart.
+- Full, Calm, and Still behave as described above, and the choice survives a
+  restart.
 - Picking an outfit in the header popup changes the character in every scene, and
   the choice survives a restart.
 - The rail shows the 20 px sprites.
