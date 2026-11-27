@@ -2,10 +2,11 @@
 
 import { View, div, image, svg } from "gpui-kit";
 import { v_flex, h_flex } from "gpui-base";
-import { agents, terminals, panes, focused, spaces, run, theme, shared, setShared, setAgentOrder, openOverlay, closeOverlay, props, window, layout } from "herdr";
+import { agents, terminals, panes, focused, spaces, run, theme, shared, setShared, setAgentOrder, openOverlay, closeOverlay, props, window, layout, exec, notify } from "herdr";
 import { LOOT } from "./loot.js";
 import { MONSTERS, SORCERER, DRUID, PALADIN } from "./fights.js";
 import { OUTFITS, RETRO } from "./outfits.js";
+import { MARKS } from "./marks.js";
 
 function find(node, id) {
   if (node?.id === id) return node;
@@ -103,6 +104,28 @@ const PICKER_SIZE = {
   height: [OUTFITS, RETRO].reduce((rows, list) => rows + Math.ceil(list.length / PICKER_COLUMNS), 0) * PICKER_CELL.h + 102,
 };
 
+// A mark is a label on the terminal, so every Herdr client keeps it, and it
+// ends with the terminal.
+const MARK_LABEL = "tibia.mark";
+const MARK_SIZE = 14; // 12 px icons with a 1 px outline, from vip-marks.py.
+const MARK_COLUMNS = 5;
+const MARK_CELL = 32;
+const MARK_MENU_SIZE = {
+  width: MARK_COLUMNS * MARK_CELL + 12,
+  // Header and padding.
+  height: Math.ceil(MARKS.length / MARK_COLUMNS) * MARK_CELL + 42,
+};
+const markOf = (terminal) => MARKS.find(([id]) => id === terminal?.labels?.[MARK_LABEL])?.[0];
+const openMarkMenu = (terminal) => openOverlay({ mod: "agents-tibia", kind: "popup", ...MARK_MENU_SIZE, props: { markMenu: true, terminal } });
+
+function mark(id) {
+  const root = "mods/agents-tibia/sprites";
+  if (window()?.platform !== "macos") return image(`${root}/marks/${id}.png`).w(MARK_SIZE).h(MARK_SIZE).flex_none();
+  // As sprite() does: the padded copy's 3 px border is 1.5 px at half size.
+  return div().relative().w(MARK_SIZE).h(MARK_SIZE).flex_none().overflow_hidden()
+    .child(image(`${root}/padded/marks/${id}.png`).w(MARK_SIZE + 3).h(MARK_SIZE + 3).absolute().top(-1.5).left(-1.5));
+}
+
 const RANK = { blocked: 4, done: 3, working: 2, idle: 1 };
 // A sub-agent without a pane isn't in agents(): its raw word, error counting as
 // blocked. It's never done: it reports to its parent, and the parent's done is the news.
@@ -136,7 +159,7 @@ function icon(p, size, color) {
 
 export default class Agents extends View {
   init(_props, cx) {
-    if (props()?.sortMenu || props()?.outfitMenu) return;
+    if (props()?.sortMenu || props()?.outfitMenu || props()?.markMenu) return;
     this.folded = new Set();
     this.animations = {
       attack: { frames: ATTACK_FRAMES, step: 85, pause: 320, index: 0 },
@@ -314,6 +337,59 @@ export default class Agents extends View {
           () => setShared("tibia.motion", m.id)))));
   }
 
+  markMenu(t) {
+    const { terminal, overlay } = props();
+    const current = markOf(terminals().find((x) => x.address === terminal));
+    // Closes once the label is written: closing first would cancel the call.
+    const choose = async (id) => {
+      let error;
+      try {
+        const result = await exec("hc", ["label", terminal, `${MARK_LABEL}=${id}`]);
+        if (result.code !== 0) error = result.stderr.trim();
+      } catch (e) {
+        error = String(e?.message ?? e);
+      }
+      if (error !== undefined) notify({ title: "Couldn't mark the agent", body: error, level: "error" });
+      closeOverlay(overlay);
+    };
+    const rows = [];
+    for (let i = 0; i < MARKS.length; i += MARK_COLUMNS) rows.push(MARKS.slice(i, i + MARK_COLUMNS));
+    return v_flex()
+      .size_full()
+      .p(5)
+      .bg(t.popover)
+      .child(h_flex()
+        .h(30)
+        .flex_none()
+        .px(6)
+        .items_center()
+        .text_size(11)
+        .child(div().flex_1().text_color(t.dim).child("Mark"))
+        .child(div()
+          .id("mark-none")
+          .px(8)
+          .py(2)
+          .rounded(6)
+          .text_color(current ? t.dim : t.foreground)
+          .when(!current, (el) => el.bg(t.hover))
+          .hover((s) => s.text_color(t.foreground))
+          .on_click(() => choose(""))
+          .child("None")))
+      .children(rows.map((row) => h_flex().flex_none().children(row.map(([id, name]) => div()
+        .id(`mark-${id}`)
+        .size(MARK_CELL)
+        .flex()
+        .flex_none()
+        .items_center()
+        .justify_center()
+        .rounded(7)
+        .when(id === current, (el) => el.bg(t.hover).border_1().border_color(t.input))
+        .hover((s) => s.bg(t.hover))
+        .tooltip(name)
+        .on_click(() => choose(id))
+        .child(mark(id))))));
+  }
+
   peek(addr) {
     run("terminal.peek", { terminal: addr });
   }
@@ -335,6 +411,7 @@ export default class Agents extends View {
     const st = kidStatus(k, this.listed);
     const pic = icon(k.program, 14, t.foreground);
     const on = k.address === shown;
+    const marked = markOf(k);
     return h_flex()
       .id(`sub-${k.address}`)
       .pl(39)
@@ -348,10 +425,12 @@ export default class Agents extends View {
       .when(on, (el) => el.bg(t.raised))
       .hover((s) => s.bg(t.hover))
       .on_click(() => (this.listed.has(k.address) ? run("pane.focus", { terminal: k.address }) : this.peek(k.address)))
+      .on_mouse_down("right", () => openMarkMenu(k.address))
       .children(s.lines.map(l => div().self_start().mt(-4).w(9).h(17).mr(4).flex_none()
         .when(Boolean(l), el => el.border_l(1.5).border_color(t.input))
         .when(l === "└" || l === "├", el => el.border_b(1.5).rounded_bl(6))))
-      .when(Boolean(pic), el => el.child(div().mr(8).child(pic)))
+      .when(Boolean(pic), el => el.child(div().mr(marked ? 6 : 8).child(pic)))
+      .when(Boolean(marked), el => el.child(div().mr(6).child(mark(marked))))
       .child(div().flex_1().truncate().text_color(on ? t.foreground : t.muted).child(k.name || k.template || k.program?.name || k.address))
       .when(!compact, (el) => el.child(this.status({ address: k.address, status: st })));
   }
@@ -527,6 +606,7 @@ export default class Agents extends View {
     const t = theme();
     if (props()?.sortMenu) return this.sortMenu(t);
     if (props()?.outfitMenu) return this.outfitMenu(t);
+    if (props()?.markMenu) return this.markMenu(t);
     for (const animation of Object.values(this.animations)) animation.drawn = false;
     const collapsed = narrow();
     const sort = sortOf();
@@ -534,6 +614,7 @@ export default class Agents extends View {
     this.listed = new Map(list.map((a) => [a.address, a.status]));
     const all = terminals();
     this.migratePins(all);
+    const marks = new Map(all.map((x) => [x.address, markOf(x)]));
     const shown = focused()?.agent;
     const now = Date.now();
     this.track(list, now);
@@ -627,6 +708,7 @@ export default class Agents extends View {
           .child(div().flex_1().min_w(0).whitespace_nowrap().text_right().text_color(a.focused ? t.foreground : t.muted).child(String(i + 1)))
           .child(this.status(a, RAIL_SPRITE_SIZE));
       }
+      const marked = marks.get(a.address);
       const when = this.since(a);
       const idle = a.status === "idle" && !a.focused;
       const isPinned = a.pinned;
@@ -668,12 +750,15 @@ export default class Agents extends View {
           cx.notify();
         })
         .on_click(() => run("pane.focus", { pane: a.pane }))
+        .on_mouse_down("right", () => openMarkMenu(a.address))
         .when(Boolean(pic), el => el.child(div().id(`agent-fold-${a.address}`)
           .when(subs.length > 0, el => el.on_click((_e, cx) => {
             cx.stop_propagation();
             this.folded.has(a.address) ? this.folded.delete(a.address) : this.folded.add(a.address);
             cx.notify();
           })).child(pic)))
+        // Closer to the icon and the name than the row's other parts.
+        .when(Boolean(marked), el => el.child(div().flex_none().mx(-3).child(mark(marked))))
         .child(h_flex().flex_1().min_w(0).gap(5).items_center()
           .child(div().min_w(0).max_w(full && more ? 120 : 200).truncate().text_color(idle ? t.muted : t.foreground).child(name))
           .when(full && Boolean(more), el => el.child(div().flex_1().min_w(0).truncate().text_color(t.dim).child(`\u00b7 ${more}`))))

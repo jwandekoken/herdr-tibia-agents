@@ -59,6 +59,13 @@ replaced by this mod. Colors and type come from the active theme.
   with that status, so priority rows have no scenes of their own.
 - Click a row to focus its pane; click a sub-agent without a pane to peek at it.
 - Hover a row to get a pin button; pinned agents come first.
+- Right-click a row, sub-agents included, to open a 172×106 popup at the
+  pointer: "None" and the ten VIP list icons (Heart, Skull, Lightning,
+  Crosshair, Star, Yin-yang, Triangle, Cross, Dollar, Iron cross), the current
+  one highlighted. Choosing one closes the popup. The mark shows at 14 px (a
+  12 px icon in a 1 px dark outline) between the program icon and the name, in
+  both views; unmarked rows keep no space for it, and the rail shows none. It
+  changes no ordering. A failure to save it is notified.
 - Click a header to fold its group. A row's chevron, or its program icon, folds
   its sub-agents.
 - The sort icon opens a 200×140 popup: Priority or Grouped by space.
@@ -78,20 +85,22 @@ replaced by this mod. Colors and type come from the active theme.
 ## Built from
 
 - One mod, `agents-tibia` (`main.js`, `outfits.js`, `loot.js`, `fights.js`,
-  `sprites/`), a modified copy of the shipped `agents` mod of Herdr 0.1.18. Its
-  `mod.json` has `"place": "none"`. The layout puts it in the block with id
-  `agents`.
+  `marks.js`, `sprites/`), a modified copy of the shipped `agents` mod of Herdr
+  0.1.18. Its `mod.json` has `"place": "none"`. The layout puts it in the block
+  with id `agents`.
 - Props: `{ sortMenu: true }` renders the sort popup, `{ outfitMenu: true }` the
-  outfit picker; no props renders the panel.
+  outfit picker, `{ markMenu: true, terminal }` the mark picker; no props renders
+  the panel.
 - `herdr` functions: `agents`, `terminals`, `panes`, `focused`, `spaces`, `run`,
   `theme`, `shared`, `setShared`, `setAgentOrder`, `openOverlay`,
-  `closeOverlay`, `props`, `window`, `layout`.
+  `closeOverlay`, `props`, `window`, `layout`, `exec`, `notify`.
 - Commands: `pane.focus`, `terminal.peek`, `terminal.pin`, `layout.resize`.
 - State: shared `tibia.outfit`, `tibia.vocation`, `tibia.motion`,
   `agents.sort`, `sidebar.width`, `sidebar.collapsed`; `localStorage` `changed` (each agent's state, time, and
-  fight) and `pins`.
+  fight) and `pins`; terminal label `tibia.mark`.
 - Icons come from the shipped `workspace-chrome` mod.
-- Reaches no network, runs no programs, and reads no files outside Herdr's mods.
+- Reaches no network and reads no files outside Herdr's mods. The one program it
+  runs is `hc label`, to save a mark.
   `install.py` and `tools/` run outside Herdr; the installer runs
   `herdr-app check`.
 - Art: PNGs made by `tools/tibia860.py` from the extended Tibia 8.6 client. Each
@@ -136,3 +145,5 @@ replaced by this mod. Colors and type come from the active theme.
 - Picking an outfit in the header popup changes the character in every scene, and
   the choice survives a restart.
 - The rail shows the 20 px sprites.
+- Right-clicking a row marks that agent, "None" removes the mark, and the mark
+  survives a restart.

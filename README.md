@@ -34,9 +34,25 @@ Click the character in the panel header to choose:
 
 The Needs you burst plays in all three, so it stands out.
 
-The art is CipSoft's, taken from Tibia client files. Keep this repository
-private, or remove `mods/agents-tibia/sprites/` **and its Git history** before
-publishing it.
+The art is CipSoft's, taken from Tibia client files (the VIP icons by way of
+[OTClient](https://github.com/mehah/otclient)). Keep this repository private, or
+remove `mods/agents-tibia/sprites/`, `tools/vip-icons.png`, and the preview
+images, **and their Git history**, before publishing it.
+
+## Marks
+
+Mark agents with the icons of Tibia's VIP list, to tell them apart at a glance.
+
+![Four demo agents, three of them marked, beside the mark picker](marks.png)
+
+*Screenshots of demo agents: the panel's rows and the picker.*
+
+Right-click an agent, or a sub-agent, and pick one of the ten icons. The mark
+shows between its program icon and its name, in both views. **None** removes it.
+The icons have no fixed meaning and don't change the order of agents.
+
+A mark stays with its terminal: other Herdr clients show it too, and it ends when
+the terminal closes. The narrow sidebar shows no marks.
 
 ## Install or update
 
@@ -83,6 +99,9 @@ python3 tools/dump-dat-860.py     # once per client version
 python3 tools/tibia860.py         # writes mods/agents-tibia/sprites/
 python3 install.py
 ```
+
+The VIP marks come from `tools/vip-icons.png` instead of the client files:
+`python3 tools/vip-marks.py` rewrites them.
 
 For client files kept elsewhere, pass `--dat <path>/Tibia.dat` to the dump and
 `--source <path>` to the generator. The generator also writes a contact sheet,

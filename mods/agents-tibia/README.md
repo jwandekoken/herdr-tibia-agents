@@ -16,6 +16,9 @@ missing or unknown values, `full`, or `still`. Calm pauses longer between
 attacks and holds the sleeping and rail sprites still. Still also freezes the
 working scenes; only blocked agents move.
 
+Right-click an agent to mark it with a Tibia VIP list icon, or to remove the
+mark. It is kept in the terminal label `tibia.mark`; `marks.js` lists the icons.
+
 `outfits.js`, `loot.js`, and `fights.js` list the outfits, loot, monsters, and
 attacks. After editing them, regenerate the sprites with `tools/tibia860.py` from
 the source repository and run its `install.py`.

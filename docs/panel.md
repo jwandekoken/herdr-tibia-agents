@@ -49,6 +49,22 @@ Scene sizes and positions are constants at the top of
 `STRIKE_FRAMES` use its four hit steps, and `SLEEP_FRAMES` match the phases of
 the sleep effect.
 
+## Marks
+
+[`marks.js`](../mods/agents-tibia/marks.js) lists the VIP icons as
+`[id, name]`, in the order of `tools/vip-icons.png`: OTClient's
+`data/images/game/viplist/icons.png`, a blank cell and ten 12×12 icons.
+[`tools/vip-marks.py`](../tools/vip-marks.py) hardens each icon's edges, adds a
+1 px dark outline, and doubles it into `sprites/marks/`, with the macOS copies in `sprites/padded/marks/`.
+
+A mark is the terminal label `tibia.mark`, which the picker sets with
+`hc label`. The terminal's machine keeps it, so every Herdr client shows it, and
+it ends with the terminal. To set one by hand:
+
+```sh
+hc label <terminal> tibia.mark=star   # tibia.mark= removes it
+```
+
 ## Outfits
 
 [`outfits.js`](../mods/agents-tibia/outfits.js) lists the picker's entries as
@@ -59,8 +75,8 @@ rows.
 
 ## Saved state
 
-Herdr writes both files, under `~/.config/herdr-app/`. They stay on each
-computer.
+Marks are terminal labels (above). Herdr writes both files below, under
+`~/.config/herdr-app/`. They stay on each computer.
 
 | File | Keys |
 | --- | --- |
