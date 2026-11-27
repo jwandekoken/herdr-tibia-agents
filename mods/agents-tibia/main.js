@@ -4,7 +4,7 @@ import { View, div, image, svg } from "gpui-kit";
 import { v_flex, h_flex } from "gpui-base";
 import { agents, terminals, panes, focused, spaces, run, theme, shared, setShared, setAgentOrder, openOverlay, closeOverlay, props, window, layout } from "herdr";
 import { LOOT } from "./loot.js";
-import { MONSTERS, SPELLS } from "./fights.js";
+import { MONSTERS, SORCERER, DRUID, PALADIN } from "./fights.js";
 import { OUTFITS, RETRO } from "./outfits.js";
 
 function find(node, id) {
@@ -59,14 +59,33 @@ const EDGE_PADDING = 3; // Matches the transparent PNG border from tibia860.py.
 const ATTACK_FRAMES = [2663, 2664, 2665, 2666, 2667, 2668, null];
 // The panel draws wide scenes; the rail, square sprites.
 const SCENE_RATIO = 96 / 64;
-const SPELL_STEPS = 9; // 5 of flight and 4 of hit, as rendered by tibia860.py.
+const FLIGHT_STEPS = 5;
+const SPELL_STEPS = FLIGHT_STEPS + 4; // Flight, then hit, as rendered by tibia860.py.
 const SPELL_FRAMES = [...Array(SPELL_STEPS).keys(), null];
+// A knight's attack: walk up, strike, walk back. Each frame has how far right of
+// its spot the character is, in scene pixels, then the walking pose or the step
+// of the blood spurting from the monster. null is the pause, standing at the start.
+const KNIGHT_START = 6;
+const STEP_MARGIN = 6; // Empty left of the walking frames, as in tibia860.py.
+const STRIKE_FRAMES = [
+  { x: 11, pose: 1 }, { x: 16, pose: 2 }, { x: 21, pose: 1 }, { x: 27, pose: 2 },
+  { x: 27, hit: 0 }, { x: 27, hit: 1 }, { x: 27, hit: 2 }, { x: 27, hit: 3 },
+  { x: 22, pose: 1 }, { x: 17, pose: 2 }, { x: 12, pose: 1 }, null,
+];
 const SLEEP_FRAMES = [...Array(7).keys(), null]; // Effect 33's phases.
 const LOOKTYPES = new Set([...OUTFITS, ...RETRO].flatMap(([, male, female]) => [String(male), String(female)]));
 const outfitId = () => {
   const outfit = String(shared("tibia.outfit"));
   return LOOKTYPES.has(outfit) ? outfit : "130";
 };
+
+const VOCATIONS = [
+  { id: "sorcerer", label: "Sorcerer", attacks: SORCERER },
+  { id: "druid", label: "Druid", attacks: DRUID },
+  { id: "paladin", label: "Paladin", attacks: PALADIN },
+  { id: "knight", label: "Knight" }, // Strikes up close: no missiles.
+];
+const vocation = () => VOCATIONS.find((v) => v.id === shared("tibia.vocation")) ?? VOCATIONS[0];
 
 // The outfit picker: a grid of every outfit for one sex, the retro ones last.
 const PICKER_COLUMNS = 8;
@@ -114,10 +133,12 @@ export default class Agents extends View {
     this.folded = new Set();
     this.animations = {
       attack: { frames: ATTACK_FRAMES, step: 85, pause: 320, index: 0 },
-      spell: { frames: SPELL_FRAMES, step: 120, pause: 600, index: 0 },
+      spell: { frames: SPELL_FRAMES, step: 120, pause: 600, index: 0, cycle: 0 },
+      strike: { frames: STRIKE_FRAMES, step: 120, pause: 600, index: 0 },
       sleep: { frames: SLEEP_FRAMES, step: 220, pause: 660, index: 0 },
     };
     this.seed = Math.floor(Math.random() * 0x100000000);
+    this.bled = new Set(); // Working stretches in which a paladin has hit.
     // Each agent's last state and when it changed (ms), kept across restarts.
     try { this.changed = JSON.parse(localStorage.getItem("changed") ?? "{}"); } catch { this.changed = {}; }
     if (!this.changed || typeof this.changed !== "object" || Array.isArray(this.changed)) this.changed = {};
@@ -206,20 +227,22 @@ export default class Agents extends View {
     const current = outfitId();
     // Opens on the chosen outfit's sex.
     this.female ??= [...OUTFITS, ...RETRO].some(([, , female]) => String(female) === current);
-    const toggle = (label, female) => div()
-      .id(`sex-${label}`)
+    const toggle = (id, label, on, select) => div()
+      .id(id)
       .px(8)
       .py(2)
       .rounded(6)
       .text_size(11)
-      .text_color(this.female === female ? t.foreground : t.dim)
-      .when(this.female === female, (el) => el.bg(t.hover))
+      .text_color(on ? t.foreground : t.dim)
+      .when(on, (el) => el.bg(t.hover))
       .hover((s) => s.text_color(t.foreground))
       .on_click((_e, cx) => {
-        this.female = female;
+        select();
         cx.notify();
       })
       .child(label);
+    const sex = (label, female) => toggle(`sex-${label}`, label, this.female === female, () => { this.female = female; });
+    const chosen = vocation().id;
     const cell = ([name, male, female]) => {
       const id = String(this.female ? female : male);
       return v_flex()
@@ -257,8 +280,11 @@ export default class Agents extends View {
         .gap(4)
         .items_center()
         .child(div().flex_1().text_size(11).text_color(t.dim).child("Outfit"))
-        .child(toggle("Male", false))
-        .child(toggle("Female", true)))
+        .children(VOCATIONS.map((v) => toggle(`vocation-${v.id}`, v.label, v.id === chosen,
+          () => setShared("tibia.vocation", v.id))))
+        .child(div().w(1).h(14).mx(6).flex_none().bg(t.border))
+        .child(sex("Male", false))
+        .child(sex("Female", true)))
       .children(grid(OUTFITS))
       .child(h_flex()
         .h(24)
@@ -346,11 +372,13 @@ export default class Agents extends View {
         .child(this.sprite(frame, size, "attack"))));
   }
 
-  // A wide scene: full-size images stacked in order, each [name, directory].
+  // A wide scene: full-size images stacked in order, each [name, directory] and,
+  // to shift it right, a number of scene pixels.
   scene(size, layers) {
     const width = size * SCENE_RATIO;
     return div().relative().w(width).h(size).flex_none()
-      .children(layers.filter(Boolean).map(([name, directory]) => div().absolute().top(0).left(0)
+      .children(layers.filter(Boolean).map(([name, directory, x = 0]) => div().absolute().top(0)
+        .left(x * size / SPRITE_SIZE)
         .child(this.sprite(name, size, directory, width))));
   }
 
@@ -360,12 +388,37 @@ export default class Agents extends View {
   }
 
   fight(a, size) {
-    const [missile] = this.pick(SPELLS, "spell", a);
+    const { id, attacks } = vocation();
+    if (id === "knight") return this.melee(a, size);
     const step = this.frame("spell");
+    // A paladin picks anew for every shot. Each hit draws blood, and the first
+    // leaves a pool for the rest of the working stretch.
+    const paladin = id === "paladin";
+    const stretch = this.since(a);
+    const [missile] = this.pick(attacks, "spell", a, paladin ? `${stretch}:${this.animations.spell.cycle}` : stretch);
+    const hit = paladin && step >= FLIGHT_STEPS; // null, the pause, compares as 0.
+    const key = `${a.address}:${stretch}`;
+    if (hit) this.bled.add(key);
     return this.scene(size, [
+      paladin && this.bled.has(key) && ["pool", "blood"],
       ["fight", outfitId()],
       [this.monster(a), "monsters"],
+      hit && [step - FLIGHT_STEPS, "blood"],
       step !== null && [`${missile}-${step}`, "spells"],
+    ]);
+  }
+
+  // A knight walks up to the monster, bleeding on the floor, and strikes it,
+  // drawn in front of it.
+  melee(a, size) {
+    const frame = this.frame("strike");
+    return this.scene(size, [
+      ["pool", "blood"],
+      [this.monster(a), "monsters"],
+      frame?.pose
+        ? [`step${frame.pose}`, outfitId(), frame.x - STEP_MARGIN]
+        : ["fight", outfitId(), frame?.x ?? KNIGHT_START],
+      frame?.hit !== undefined && [frame.hit, "blood"],
     ]);
   }
 
@@ -414,6 +467,7 @@ export default class Agents extends View {
           return;
         }
         animation.index = (animation.index + 1) % animation.frames.length;
+        if (animation.index === 0) animation.cycle += 1;
         cx.notify();
       });
     }

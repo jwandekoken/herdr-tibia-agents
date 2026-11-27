@@ -5,13 +5,13 @@ Herdr's Agents panel, with an animated Tibia scene for each agent status.
 ![The Agents panel and its outfit picker](preview.png)
 
 Pick your character in the panel header: 24 outfits and 7 retro ones, male or
-female.
+female, and your vocation: Sorcerer, Druid, Paladin, or Knight.
 
 | Status | Scene |
 | --- | --- |
 | Needs you | The monster closes in; blood on the character and the floor. |
 | Done | The monster's corpse with a piece of loot on it. |
-| Working | The character casts a spell at a monster. |
+| Working | The character attacks a monster: sorcerers and druids cast spells, paladins shoot, knights step up and strike. |
 | Idle | The character dozes. |
 
 The art is CipSoft's, taken from Tibia client files. Keep this repository
@@ -45,7 +45,9 @@ To go back: `herdr-app do layout.switch '{"name":"main"}'`.
   male or female: Citizen through Wayfarer, or the retro (oldschool) looks of
   the first seven. The default is the male mage. To offer other outfits, edit
   `outfits.js` as below.
-- **Outfits, monsters, spells, loot:** edit `outfits.js`, `fights.js`, or
+- **Vocation:** chosen in the same popup, independently of the outfit. It
+  changes the Working scene only; the default is Sorcerer.
+- **Outfits, monsters, attacks, loot:** edit `outfits.js`, `fights.js`, or
   `loot.js` in `mods/agents-tibia/`, regenerate the sprites, and run the
   installer.
 
@@ -69,5 +71,6 @@ For client files kept elsewhere, pass `--dat <path>/Tibia.dat` to the dump and
 `--source <path>` to the generator. The generator also writes a contact sheet,
 `preview-860.png`, beside the client files.
 
-When changing the animations, keep `SPELL_STEPS` and `SLEEP_FRAMES` in
-`main.js` equal to the number of frames the generator writes.
+When changing the animations, keep `SPELL_STEPS`, `SLEEP_FRAMES`, and the hit
+steps of `STRIKE_FRAMES` in `main.js` in line with the frames the generator
+writes.

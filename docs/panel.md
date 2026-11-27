@@ -32,7 +32,9 @@ combination:
 | --- | --- | --- |
 | Character | `<outfit>/fight.png` | East-facing standing pose, bottom-left, up to 44×62 px. |
 | Monster | `monsters/<looktype>.png` | West-facing, still, bottom-aligned and centered at x=72, up to 48×56 px. |
-| Spell | `spells/<missile>-<0–8>.png` | Frames 0–4 fly the 30 px missile from x=34 to the monster; 5–8 sample its hit effect. |
+| Spell | `spells/<missile>-<0–8>.png` | Sorcerer, druid, paladin: frames 0–4 fly the 30 px missile from x=34 to the monster; 5–8 sample its hit effect. Spears (`LOW_MISSILES`) are moved up onto the flight path. |
+| Walk | `<outfit>/step1.png`, `step2.png` | Knight: the two walking frames facing east, registered with `fight.png` after a 6 px left margin (`STEP_MARGIN`). `main.js` draws the character above the monster and shifts it right. |
+| Blood | `blood/<0–3>.png`, `blood/pool.png` | Knight and paladin: four 42 px samples of the blood effect on the monster, and a splatter under it, drawn like the cornered one. |
 | Cornered character | `<outfit>/cornered.png` | Needs you: south-facing, centered at x=22. |
 | Blood | `cornered/pool.png` | Needs you: splatter under the character, up to 44 px wide and flattened. |
 | Close monster | `melee/<looktype>.png` | Needs you: the same monster with its left edge at x=29. |
@@ -43,8 +45,9 @@ combination:
 
 Scene sizes and positions are constants at the top of
 [`tools/tibia860.py`](../tools/tibia860.py); frame timing is in `main.js`.
-`SPELL_STEPS` there must match the generator's flight and hit steps, and
-`SLEEP_FRAMES` the phases of the sleep effect.
+`SPELL_STEPS` there must match the generator's flight and hit steps,
+`STRIKE_FRAMES` use its four hit steps, and `SLEEP_FRAMES` match the phases of the
+sleep effect.
 
 ## Outfits
 
@@ -61,18 +64,19 @@ computer.
 
 | File | Keys |
 | --- | --- |
-| `shared.json` | `tibia.outfit` (the chosen looktype), `agents.sort`, `sidebar.width`, `sidebar.collapsed` |
+| `shared.json` | `tibia.outfit` (the chosen looktype), `tibia.vocation`, `agents.sort`, `sidebar.width`, `sidebar.collapsed` |
 | `data/agents-tibia/store.json` | `changed`: per agent, its state (`s`, with done saved as idle), the time of that change (`at`), and the fight it is in (`fight`); `pins`: old pins still being migrated |
 
 Entries for agents that are gone are dropped after 30 days, when another agent
 changes state. Monster, spell, and loot picks are not saved: they derive from
 these entries and a random seed made at each panel load, so a reload picks anew.
 
-## Changing monsters and spells
+## Changing monsters and attacks
 
 In [`fights.js`](../mods/agents-tibia/fights.js), `MONSTERS` lists monsters as
-`[looktype, corpse item id]` pairs, and each `SPELLS` entry is a
-`[missile id, hit effect id]` pair. A monster's corpse item ID is the
+`[looktype, corpse item id]` pairs. `SORCERER`, `DRUID`, and `PALADIN` list
+`[missile id, hit effect id]` pairs, with each missile id in one pair only.
+Knights have no list: they always draw blood. A monster's corpse item ID is the
 `monster.corpse` value in its server definition (for example, TFS
 `data/monsters/`). [`loot.js`](../mods/agents-tibia/loot.js) lists the loot.
 After editing either file, regenerate and install, so the panel never names an
