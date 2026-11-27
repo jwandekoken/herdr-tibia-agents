@@ -27,7 +27,7 @@ replaced by this mod. Colors and type come from the active theme.
 
 | Status | Panel (96×64) | Rail (20×20) |
 | --- | --- | --- |
-| Working | A monster stands bottom-right, facing west; the character faces east. Sorcerer, druid, paladin: the character stands bottom-left, a missile flies in 5 frames and its hit effect shows in 4, 120 ms each, then 600 ms pause. With a paladin, blood also spurts from the monster during the hit, and a pool lies under it from the first hit until the working stretch ends (a panel reload clears it). Knight: blood lies under the monster. The character walks from 6 scene px right of its spot to 27 in 4 frames, alternating its two walking poses, stands while blood spurts from the monster in 4 frames, walks back in 3, 120 ms each, then pauses 600 ms at the start. |
+| Working | A monster stands bottom-right, facing west; the character faces east. Sorcerer, druid, paladin: the character stands bottom-left, a missile flies in 5 frames and its hit effect shows in 4, 120 ms each, then 600 ms pause. With a paladin, blood also spurts from the monster during the hit, and a pool lies under it from the first hit until the working stretch ends (a panel reload clears it). Knight: blood lies under the monster. The character walks from 6 scene px right of its spot to 27 in 4 frames, alternating its two walking poses, stands while blood spurts from the monster in 4 frames, walks back in 3, 120 ms each, then pauses 600 ms at the start. | Character in its walking frame, bobbing 1 px every 240 ms. |
 | Needs you (blocked) | The character faces south on a blood splatter, the monster right beside. A blood burst plays on the character: 6 frames, 85 ms each, then 320 ms pause. | Character with the burst. |
 | Done | Still: the character as in Working, the monster's corpse where it stood, one loot item on the corpse. | Character beside the item. |
 | Idle | The character as in Working with Zzz beside its head: 7 frames, 220 ms each, then 660 ms pause. | Character facing south, still. |
@@ -42,12 +42,16 @@ replaced by this mod. Colors and type come from the active theme.
   banana, fire sword, golden helmet, mastermind shield, backpack of holding,
   frozen starlight, thunder hammer).
 - Attacks: Sorcerer (fire, energy, energy ball, sudden death), Druid (ice, small
-  ice, earth, poison) and Paladin (arrow, poison, burst, sniper, onyx, flash,
+  ice, earth, poison), and Paladin (arrow, poison, burst, sniper, onyx, flash,
   flaming, shiver, and earth arrows; bolt, power, infernal, and piercing bolts;
   spear, hunting, enchanted, royal, and ethereal spears; throwing, assassin, and
-  viper stars; throwing knife; holy burst; small holy); a
-  Knight always strikes up close, drawing blood. One vocation applies to every agent.
-  It is chosen independently of the outfit; Sorcerer is the default.
+  viper stars; throwing knife; holy burst; small holy). A Knight always strikes
+  up close, drawing blood. One vocation applies to every agent. It is chosen
+  independently of the outfit; Sorcerer is the default.
+- Motion is Calm (default) or Full. The table above is Full. In Calm, attacks
+  pause 2500 ms instead of 600, the Idle scene shows one still frame of the Zzz
+  (phase 1 at 55% opacity), and the rail's working sprite does not bob. Needs
+  you is the same in both.
 - Agents showing the same status animate in step. Burst, attack, and sleep
   animations stop when not drawn or when the window is hidden.
 - A priority header shows the scene of the first agent listed in its section
@@ -57,16 +61,17 @@ replaced by this mod. Colors and type come from the active theme.
 - Click a header to fold its group. A row's chevron, or its program icon, folds
   its sub-agents.
 - The sort icon opens a 200×140 popup: Priority or Grouped by space.
-- The header character opens a 588×376 popup: a vocation toggle (Sorcerer,
-  Druid, Paladin, Knight), which keeps the popup open, a Male/Female toggle, a grid of 24
-  outfits (8 columns, 72×76 cells, 52 px sprite and name), then a "Retro" label
+- The header character opens a 588×406 popup: a vocation toggle (Sorcerer,
+  Druid, Paladin, Knight), which keeps the popup open, a Male/Female toggle, a
+  grid of 24 outfits (8 columns, 72×76 cells, 52 px sprite and name), then a "Retro" label
   and one row of 7, the current outfit highlighted. It opens on the current sex.
   Clicking an outfit changes every scene and closes the popup. Outfits: Citizen,
   Hunter, Mage, Knight, Noble, Summoner, Warrior, Barbarian, Druid, Wizard,
   Oriental, Pirate, Assassin, Beggar, Shaman, Norse, Nightmare, Jester,
   Brotherhood, Demon Hunter, Yalaharian, Newly Wed, Warmaster, Wayfarer. Retro:
   the first seven in their oldschool looks, which have no addons. The male mage
-  is the default.
+  is the default. A last row sets the motion, Full or Calm, and keeps the popup
+  open.
 - A sub-agent without a pane counts `error` as blocked and `done` as idle.
 
 ## Built from
@@ -81,8 +86,8 @@ replaced by this mod. Colors and type come from the active theme.
   `theme`, `shared`, `setShared`, `setAgentOrder`, `openOverlay`,
   `closeOverlay`, `props`, `window`, `layout`.
 - Commands: `pane.focus`, `terminal.peek`, `terminal.pin`, `layout.resize`.
-- State: shared `tibia.outfit`, `tibia.vocation`, `agents.sort`, `sidebar.width`,
-  `sidebar.collapsed`; `localStorage` `changed` (each agent's state, time, and
+- State: shared `tibia.outfit`, `tibia.vocation`, `tibia.motion`,
+  `agents.sort`, `sidebar.width`, `sidebar.collapsed`; `localStorage` `changed` (each agent's state, time, and
   fight) and `pins`.
 - Icons come from the shipped `workspace-chrome` mod.
 - Reaches no network, runs no programs, and reads no files outside Herdr's mods.
@@ -114,7 +119,6 @@ replaced by this mod. Colors and type come from the active theme.
 - `install.py` expects the shipped `main` layout to have exactly one block with
   id `agents` showing the `agents` mod, and stops otherwise. Upstream changes to
   the shipped mod need merging into `main.js` by hand.
-- The macOS rendering of the 96×64 scenes has not been verified.
 
 ## Done when
 
@@ -126,6 +130,7 @@ replaced by this mod. Colors and type come from the active theme.
 - An agent going from working to blocked or done keeps its monster.
 - Each vocation shows its own attack in the Working scene, and the choice
   survives a restart.
+- Calm and Full behave as described above, and the choice survives a restart.
 - Picking an outfit in the header popup changes the character in every scene, and
   the choice survives a restart.
 - The rail shows the 20 px sprites.

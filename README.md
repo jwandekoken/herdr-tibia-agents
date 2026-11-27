@@ -2,17 +2,36 @@
 
 Herdr's Agents panel, with an animated Tibia scene for each agent status.
 
-![The Agents panel and its outfit picker](preview.png)
+![The four vocations attacking a monster, then the Needs you, Done, and Idle scenes](preview.gif)
 
-Pick your character in the panel header: 24 outfits and 7 retro ones, male or
-female, and your vocation: Sorcerer, Druid, Paladin, or Knight.
+*Rendered from the panel's sprites, with its Full motion timing.*
 
 | Status | Scene |
 | --- | --- |
 | Needs you | The monster closes in; blood on the character and the floor. |
 | Done | The monster's corpse with a piece of loot on it. |
-| Working | The character attacks a monster: sorcerers and druids cast spells, paladins shoot, knights step up and strike. |
+| Working | The character attacks a monster, in the way of its vocation. |
 | Idle | The character dozes. |
+
+Click the character in the panel header to choose:
+
+- **Outfit:** 24 outfits and 7 retro (oldschool) ones, male or female.
+- **Vocation:** how the character attacks while an agent works.
+- **Motion:** how much the panel moves.
+
+| Vocation | Working scene |
+| --- | --- |
+| Sorcerer (default) | Casts fire, energy, energy ball, or sudden death. |
+| Druid | Casts ice, small ice, earth, or poison. |
+| Paladin | A random shot each time: arrows, bolts, spears, throwing stars and knives, or holy spells. Draws blood. |
+| Knight | Walks up to the monster, strikes it so it bleeds, and walks back. |
+
+| Motion | Behavior |
+| --- | --- |
+| Calm (default) | 2.5 s between attacks; the sleeping and narrow-sidebar sprites hold still. |
+| Full | 0.6 s between attacks; the Zzz rises and the narrow-sidebar sprite bobs. |
+
+The Needs you burst plays in both, so it stands out.
 
 The art is CipSoft's, taken from Tibia client files. Keep this repository
 private, or remove `mods/agents-tibia/sprites/` **and its Git history** before
@@ -41,15 +60,12 @@ To go back: `herdr-app do layout.switch '{"name":"main"}'`.
 
 ## Customize
 
-- **Character:** click the character in the panel header and pick an outfit,
-  male or female: Citizen through Wayfarer, or the retro (oldschool) looks of
-  the first seven. The default is the male mage. To offer other outfits, edit
-  `outfits.js` as below.
-- **Vocation:** chosen in the same popup, independently of the outfit. It
-  changes the Working scene only; the default is Sorcerer.
-- **Outfits, monsters, attacks, loot:** edit `outfits.js`, `fights.js`, or
-  `loot.js` in `mods/agents-tibia/`, regenerate the sprites, and run the
-  installer.
+The male mage, Sorcerer, and Calm are the defaults. One choice applies to every
+agent, and the vocation is independent of the outfit.
+
+To offer other outfits, monsters, attacks, or loot, edit `outfits.js`,
+`fights.js`, or `loot.js` in `mods/agents-tibia/`, regenerate the sprites, and
+run the installer.
 
 See [panel internals](docs/panel.md) for the sprite layers, previewing every
 status with demo agents, platform notes, and Herdr upgrades.

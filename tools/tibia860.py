@@ -61,6 +61,8 @@ REWARD_SIZES = (22, 28)  # Smallest and largest loot on a corpse, by its longer 
 SLEEP_EFFECT = 33  # The Zzz of a sleeping character.
 SLEEP_SIZE = (26, 28)  # Room for the Zzz, beside the character's head.
 SLEEP_LEFT = 30  # Left edge of the Zzz.
+STILL_PHASE = 1  # The phase shown, dimmed to STILL_OPACITY, in calm motion.
+STILL_OPACITY = 0.55
 
 
 class SpriteArchive:
@@ -400,6 +402,9 @@ def main():
     clear_sprites(sprites, "sleep")
     for phase, image in enumerate(sleep_images):
         save_sprite(sprites, Path("sleep") / f"{phase}.png", image)
+    still = sleep_images[STILL_PHASE].copy()
+    still.putalpha(still.getchannel("A").point(lambda alpha: round(alpha * STILL_OPACITY)))
+    save_sprite(sprites, Path("sleep") / "still.png", still)
     clear_sprites(sprites, "monsters")
     clear_sprites(sprites, "spells")
     clear_sprites(sprites, "strikes")

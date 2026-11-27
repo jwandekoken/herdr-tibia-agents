@@ -11,6 +11,10 @@ which decides how the character attacks while an agent works. It is kept in
 `tibia.vocation` (`sorcerer`, `druid`, `paladin`, or `knight`); missing or
 unknown values use `sorcerer`.
 
+The popup also sets the motion, kept in `tibia.motion`: `calm`, the default for
+missing or unknown values, or `full`. Calm pauses longer between attacks and
+holds the sleeping and rail sprites still.
+
 `outfits.js`, `loot.js`, and `fights.js` list the outfits, loot, monsters, and
 attacks. After editing them, regenerate the sprites with `tools/tibia860.py` from
 the source repository and run its `install.py`.

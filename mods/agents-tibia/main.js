@@ -73,6 +73,7 @@ const STRIKE_FRAMES = [
   { x: 22, pose: 1 }, { x: 17, pose: 2 }, { x: 12, pose: 1 }, null,
 ];
 const SLEEP_FRAMES = [...Array(7).keys(), null]; // Effect 33's phases.
+const CALM_PAUSE = 2500; // ms between attacks in calm motion.
 const LOOKTYPES = new Set([...OUTFITS, ...RETRO].flatMap(([, male, female]) => [String(male), String(female)]));
 const outfitId = () => {
   const outfit = String(shared("tibia.outfit"));
@@ -87,13 +88,18 @@ const VOCATIONS = [
 ];
 const vocation = () => VOCATIONS.find((v) => v.id === shared("tibia.vocation")) ?? VOCATIONS[0];
 
+// Calm, the default, keeps the eye for agents that need you: attacks pause
+// longer, and the sleeping and rail sprites hold still.
+const MOTIONS = [{ id: "full", label: "Full" }, { id: "calm", label: "Calm" }];
+const calm = () => shared("tibia.motion") !== "full";
+
 // The outfit picker: a grid of every outfit for one sex, the retro ones last.
 const PICKER_COLUMNS = 8;
 const PICKER_CELL = { w: 72, h: 76 };
 const PICKER_SIZE = {
   width: PICKER_COLUMNS * PICKER_CELL.w + 12,
-  // Header and padding, plus the "Retro" label.
-  height: [OUTFITS, RETRO].reduce((rows, list) => rows + Math.ceil(list.length / PICKER_COLUMNS), 0) * PICKER_CELL.h + 72,
+  // Header and padding, the "Retro" label, and the motion row.
+  height: [OUTFITS, RETRO].reduce((rows, list) => rows + Math.ceil(list.length / PICKER_COLUMNS), 0) * PICKER_CELL.h + 102,
 };
 
 const RANK = { blocked: 4, done: 3, working: 2, idle: 1 };
@@ -243,6 +249,7 @@ export default class Agents extends View {
       .child(label);
     const sex = (label, female) => toggle(`sex-${label}`, label, this.female === female, () => { this.female = female; });
     const chosen = vocation().id;
+    const motion = calm() ? "calm" : "full";
     const cell = ([name, male, female]) => {
       const id = String(this.female ? female : male);
       return v_flex()
@@ -294,7 +301,16 @@ export default class Agents extends View {
         .text_size(11)
         .text_color(t.dim)
         .child("Retro"))
-      .children(grid(RETRO));
+      .children(grid(RETRO))
+      .child(h_flex()
+        .h(30)
+        .flex_none()
+        .px(6)
+        .gap(4)
+        .items_center()
+        .child(div().flex_1().text_size(11).text_color(t.dim).child("Motion"))
+        .children(MOTIONS.map((m) => toggle(`motion-${m.id}`, m.label, m.id === motion,
+          () => setShared("tibia.motion", m.id)))));
   }
 
   peek(addr) {
@@ -443,7 +459,7 @@ export default class Agents extends View {
 
   // Idle: the character dozes.
   sleeping(size) {
-    const step = this.frame("sleep");
+    const step = calm() ? "still" : this.frame("sleep");
     return this.scene(size, [
       ["fight", outfitId()],
       step !== null && [step, "sleep"],
@@ -459,7 +475,9 @@ export default class Agents extends View {
         continue;
       }
       if (animation.timer) continue;
-      const delay = animation.frames[animation.index] === null ? animation.pause : animation.step;
+      const attack = animation === this.animations.spell || animation === this.animations.strike;
+      const pause = attack && calm() ? CALM_PAUSE : animation.pause;
+      const delay = animation.frames[animation.index] === null ? pause : animation.step;
       animation.timer = cx.timer.after(delay, cx => {
         animation.timer = null;
         if (window()?.visible === false) {
@@ -488,11 +506,11 @@ export default class Agents extends View {
   status(a, size = SPRITE_SIZE) {
     if (a.status === "working") {
       if (size !== RAIL_SPRITE_SIZE) return this.fight(a, size);
-      // The rail has no room for a fight: the character alone, bobbing.
+      // The rail has no room for a fight: the character alone, bobbing unless calm.
       // Animating the image directly can draw a line beneath it on macOS.
       return div().relative().w(size).h(size).flex_none()
         .child(div().absolute().top(0).left(0).w(size).h(size)
-          .loop("top", { from: 0, to: -1, period: 240 })
+          .when(!calm(), (el) => el.loop("top", { from: 0, to: -1, period: 240 }))
           .child(this.sprite("working", size)));
     }
     if (a.status === "blocked") return size === RAIL_SPRITE_SIZE ? this.hurt(size) : this.cornered(a, size);

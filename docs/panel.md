@@ -16,7 +16,7 @@ placed bottom-right first, following the client.
 
 Each character is cropped to its art and drawn at 1.25× its client size, or less
 when a hat, weapon, or cape wouldn't fit 44×62 px. The scale is set per outfit
-from its three poses (standing south, standing east, walking east), so a tall
+from three poses (standing south, standing east, first walking step east), so a tall
 extremity shrinks only that character (Nightmare's lance, for example).
 `CHARACTER_SCALE`, `CHARACTER_WIDTH`, and `CHARACTER_HEIGHT` set these limits.
 
@@ -34,20 +34,20 @@ combination:
 | Monster | `monsters/<looktype>.png` | West-facing, still, bottom-aligned and centered at x=72, up to 48×56 px. |
 | Spell | `spells/<missile>-<0–8>.png` | Sorcerer, druid, paladin: frames 0–4 fly the 30 px missile from x=34 to the monster; 5–8 sample its hit effect. Spears (`LOW_MISSILES`) are moved up onto the flight path. |
 | Walk | `<outfit>/step1.png`, `step2.png` | Knight: the two walking frames facing east, registered with `fight.png` after a 6 px left margin (`STEP_MARGIN`). `main.js` draws the character above the monster and shifts it right. |
-| Blood | `blood/<0–3>.png`, `blood/pool.png` | Knight and paladin: four 42 px samples of the blood effect on the monster, and a splatter under it, drawn like the cornered one. |
+| Hit blood | `blood/<0–3>.png`, `blood/pool.png` | Knight and paladin: four 42 px samples of the blood effect on the monster, and a splatter under it, drawn like the cornered one. |
 | Cornered character | `<outfit>/cornered.png` | Needs you: south-facing, centered at x=22. |
-| Blood | `cornered/pool.png` | Needs you: splatter under the character, up to 44 px wide and flattened. |
+| Floor blood | `cornered/pool.png` | Needs you: splatter under the character, up to 44 px wide and flattened. |
 | Close monster | `melee/<looktype>.png` | Needs you: the same monster with its left edge at x=29. |
 | Burst | `cornered/<sprite id>.png` | Needs you: 40 px, on the character. |
 | Corpse | `corpses/<looktype>.png` | Done: centered at x=72, up to 48×48 px. Reuses the Working character. |
 | Reward | `rewards/<item>.png` | Done: the loot on the corpse, 22–28 px on its longer side. |
-| Zzz | `sleep/<0–6>.png` | Idle: up to 26×28 px, left edge at x=30. Reuses the Working character. |
+| Zzz | `sleep/<0–6>.png`, `sleep/still.png` | Idle: up to 26×28 px, left edge at x=30. Reuses the Working character. |
 
 Scene sizes and positions are constants at the top of
 [`tools/tibia860.py`](../tools/tibia860.py); frame timing is in `main.js`.
 `SPELL_STEPS` there must match the generator's flight and hit steps,
-`STRIKE_FRAMES` use its four hit steps, and `SLEEP_FRAMES` match the phases of the
-sleep effect.
+`STRIKE_FRAMES` use its four hit steps, and `SLEEP_FRAMES` match the phases of
+the sleep effect.
 
 ## Outfits
 
@@ -64,12 +64,13 @@ computer.
 
 | File | Keys |
 | --- | --- |
-| `shared.json` | `tibia.outfit` (the chosen looktype), `tibia.vocation`, `agents.sort`, `sidebar.width`, `sidebar.collapsed` |
+| `shared.json` | `tibia.outfit` (the chosen looktype), `tibia.vocation`, `tibia.motion`, `agents.sort`, `sidebar.width`, `sidebar.collapsed` |
 | `data/agents-tibia/store.json` | `changed`: per agent, its state (`s`, with done saved as idle), the time of that change (`at`), and the fight it is in (`fight`); `pins`: old pins still being migrated |
 
 Entries for agents that are gone are dropped after 30 days, when another agent
-changes state. Monster, spell, and loot picks are not saved: they derive from
+changes state. Monster, attack, and loot picks are not saved: they derive from
 these entries and a random seed made at each panel load, so a reload picks anew.
+A paladin's shot count and blood pools last only until a reload too.
 
 ## Changing monsters and attacks
 
@@ -102,6 +103,20 @@ done
 
 An `idle` demo shows as Done until you look at it. The demos end after an hour;
 `hc kill tibia-working` (and so on for each state) ends them sooner.
+
+To try vocations and motion, keep one agent working for an hour, then change them
+in the outfit popup:
+
+```sh
+mkdir -p /tmp/tibia-demo
+hc run --bg --rm --no-parent --no-notify --name tibia-working \
+  --cwd /tmp/tibia-demo \
+  --label herdr.space=tibiademo --label herdr.tab=tibiademo-working -- \
+  sh -c 'printf "\033]7501;state=working\033\\"; sleep 3600'
+```
+
+A priority header shows only its section's first agent; sort by space to see the
+demo's own scene.
 
 ## macOS and Linux
 
